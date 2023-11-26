@@ -12,10 +12,11 @@ from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVR
+from streamlit.delta_generator import DeltaGenerator
 
 
 # typ pro Streamlit kontejnery
-StContainer = st.delta_generator.DeltaGenerator
+StContainer = DeltaGenerator
 
 
 # adresář s daty
@@ -51,12 +52,12 @@ REGRESSION_MODELS = {
 METRICS = {"MAE": mean_absolute_error, "MSE": mean_squared_error, "R2": r2_score}
 
 
-@st.cache
+@st.cache_data
 def load_data(csv_file: Union[str, pathlib.Path, io.IOBase]) -> pd.DataFrame:
     return pd.read_csv(csv_file, index_col=0)
 
 
-@st.cache
+@st.cache_data
 def preprocess(
     data: pd.DataFrame, drop_columns: Optional[List] = None, get_dummies: bool = False
 ) -> pd.DataFrame:
@@ -82,7 +83,7 @@ def regression(
     X = learning_data.drop(columns=[target])
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, stratify=stratify)
 
-    with col1.beta_expander("Výběr modelu"):
+    with col1.expander("Výběr modelu"):
         model = st.selectbox("Regresní model", list(REGRESSION_MODELS))
         # hodnoty hyperparametrů si uložíme do slovníku typu {jméno hyperparametru: hodnota}
         hyperparams = {
@@ -145,19 +146,19 @@ def main() -> None:
     st.title("Fishboard")
 
     # použijeme dva sloupce
-    col1, col2 = st.beta_columns(2)
+    col1, col2 = st.columns(2)
 
-    with col1.beta_expander("Výběr dat"):
-        # TODO použí file upload for načtení uživatelských dat
+    with col1.expander("Výběr dat"):
+        # TODO použít file upload for načtení uživatelských dat
         st.write("Vstupní data jsou ze souboru fish_data.csv")
     source_data = load_data(DATA_DIR / "fish_data.csv")
 
-    with col1.beta_expander("Preprocessing"):
+    with col1.expander("Preprocessing"):
         drop_columns = st.multiselect("Drop columns", source_data.columns)
         get_dummies = st.checkbox("Get dummies")
     learning_data = preprocess(source_data, drop_columns, get_dummies)
 
-    with col1.beta_expander("Zobrazení dat"):
+    with col1.expander("Zobrazení dat"):
         display_preprocessed = st.checkbox("Zobrazit preprocesovaná data", value=False)
         if display_preprocessed:
             displayed_data = learning_data
@@ -170,7 +171,7 @@ def main() -> None:
 
     target = col1.selectbox("Sloupec s odezvou", learning_data.columns)
 
-    with col1.beta_expander("Rozdělení na testovací a trénovací data"):
+    with col1.expander("Rozdělení na testovací a trénovací data"):
         test_size = st.slider("Poměr testovací sady", 0.0, 1.0, 0.25, 0.05)
         stratify_column = st.selectbox("Stratify", [None] + list(source_data.columns))
     if stratify_column is not None:
